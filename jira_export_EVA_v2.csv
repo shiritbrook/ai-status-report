@@ -1,0 +1,19 @@
+Issue Key,Summary,Issue Type,Status,Priority,Assignee,Team,Sprint,Due Date,Labels,Linked Issues,Last Comment
+EVA-101,Edge Video Analytics v2 - release epic,Epic,In Progress,Highest,Dana Levin,Program,,11/20/2026,release,,GA target Nov 20 confirmed with Product
+EVA-104,Train person/vehicle detector v2 on expanded dataset,Story,Done,High,Marco Ruiz,AI Models,Sprint 41,10/2/2026,model,,Training complete; mAP +4.1 pts vs v1
+EVA-107,Low-light evaluation set (5k labeled clips),Story,Blocked,High,Priya Shah,AI Models,Sprint 42,10/17/2026,data;labeling,,Vendor cannot start until PO is approved - waiting on Procurement
+EVA-109,Fix recall regression on low-light set (0.91 -> 0.86),Bug,In Progress,Highest,Marco Ruiz,AI Models,Sprint 42,10/24/2026,model;quality,EVA-107,Need full low-light set to confirm fix
+EVA-112,INT8 quantization of detector v2 for camera NPU,Story,In Progress,High,Lena Park,AI Models,Sprint 42,10/31/2026,edge;optimization,,Latency 38ms on dev board - target <=40ms met
+EVA-115,Package model v2 into edge container,Story,To Do,Medium,Lena Park,Edge Platform,Sprint 43,11/7/2026,edge;packaging,EVA-112,
+EVA-118,Model registry entry + versioned rollout config,Task,Done,Medium,Sam Okafor,MLOps,Sprint 41,10/3/2026,mlops,,Registry v2 entry created
+EVA-121,Shadow-mode evaluation pipeline in cloud,Story,In Progress,High,Sam Okafor,MLOps,Sprint 42,10/24/2026,mlops;monitoring,,Pipeline running on 3 pilot sites
+EVA-124,Drift monitoring alerts for precision/recall,Story,To Do,Medium,Sam Okafor,MLOps,Sprint 43,11/7/2026,mlops;monitoring,EVA-121,
+EVA-127,Cloud video platform: ingest v2 detection metadata,Story,In Progress,High,Tom Becker,Cloud Video Platform,Sprint 42,10/31/2026,cloud;api,,Waiting for final metadata schema from AI Models
+EVA-130,Metadata schema v2 (new attributes: confidence + track ID),Task,In Review,High,Marco Ruiz,AI Models,Sprint 42,10/15/2026,schema;api,,Draft shared; Cloud team has open questions on track ID format
+EVA-133,Operator UI: show v2 alerts with confidence score,Story,To Do,Medium,Ana Silva,Cloud Video Platform,Sprint 43,11/10/2026,ui,EVA-127,
+EVA-136,Camera firmware 3.2 with NPU runtime update,Story,To Do,High,Raj Patel,Edge Platform,Sprint 43,11/5/2026,firmware;edge,,Planned for Sprint 43
+EVA-139,Pilot customer site readiness (3 sites),Task,In Progress,Medium,Dana Levin,Program,Sprint 42,11/1/2026,pilot;customer,,2 of 3 sites confirmed; site 3 waiting on IT approval
+EVA-142,Privacy & security review for v2 metadata,Task,To Do,High,Grace Kim,Security,Sprint 43,11/7/2026,security;compliance,EVA-130,
+EVA-145,End-to-end system test (edge + cloud),Story,To Do,High,Omar Haddad,QA,Sprint 44,11/14/2026,qa;e2e,EVA-115;EVA-127,
+EVA-148,Release notes and customer documentation,Task,To Do,Low,Ana Silva,Product,Sprint 44,11/18/2026,docs,,
+EVA-151,Go/No-Go review,Task,To Do,Highest,Dana Levin,Program,Sprint 44,11/17/2026,release;governance,EVA-145,
