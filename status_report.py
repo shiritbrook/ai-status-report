@@ -1,5 +1,5 @@
 """
-EVA v2 status report generator (demo).
+AI status report generator.
 
 Reads a JIRA CSV export and meeting notes, asks Claude (Anthropic API) for an
 executive summary plus a per-workstream status, then:
@@ -9,7 +9,10 @@ executive summary plus a per-workstream status, then:
 Status colors:  High risk = Red | Medium risk = Yellow | On track = Green
 
 Usage (PowerShell, from this folder):
-    python status_report.py jira_export_EVA_v2.csv meeting_notes_EVA_v2.txt
+    python status_report.py jira_export_EVA_v2.csv meeting_notes_EVA_v2.txt [project.json]
+
+Project details (release name, GA target, workstreams) come from project.json.
+The included project.json is set up for the sample "Edge Video Analytics v2" project.
 
 The output is a DRAFT. A person checks every owner, date and status
 against the source before anything is sent.
@@ -41,7 +44,7 @@ SYSTEM_PROMPT = (
     "Always cite JIRA keys. Respond with valid JSON only - no markdown, no code fences."
 )
 
-TASK_PROMPT = """Create a status report for the Edge Video Analytics v2 release (GA target Nov 20, 2026).
+TASK_PROMPT = """Create a status report for the {project} release (GA target {ga_target}).
 
 Return JSON in exactly this shape:
 {{
@@ -65,7 +68,7 @@ Status rules:
 - "Medium risk": open issue or dependency, with a plan, date still achievable
 - "On track": progressing as planned
 
-Include one row per workstream (AI Models, MLOps, Edge Platform, Cloud Video Platform, Security, QA, Program/Pilot).
+Include one row per workstream ({workstreams}).
 Sort rows: High risk first, then Medium risk, then On track.
 
 === JIRA EXPORT (CSV) ===
@@ -83,13 +86,28 @@ COLORS = {  # status -> (HTML background, HTML text, ANSI terminal color)
 RESET = "\033[0m"
 
 
-def ask_claude(jira: str, notes: str) -> dict:
+def load_project(path: Path) -> dict:
+    """Read the project name, GA target and workstream list from a JSON file."""
+    project = json.loads(path.read_text(encoding="utf-8"))
+    for key in ("project", "ga_target", "workstreams"):
+        if key not in project:
+            sys.exit(f"{path} is missing '{key}'")
+    return project
+
+
+def ask_claude(jira: str, notes: str, project: dict) -> dict:
     client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from the environment
     response = client.messages.create(
         model=MODEL,
         max_tokens=2000,
         system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": TASK_PROMPT.format(jira=jira, notes=notes)}],
+        messages=[{"role": "user", "content": TASK_PROMPT.format(
+            project=project["project"],
+            ga_target=project["ga_target"],
+            workstreams=", ".join(project["workstreams"]),
+            jira=jira,
+            notes=notes,
+        )}],
     )
     text = response.content[0].text.strip()
     if text.startswith("```"):  # strip code fences if the model adds them anyway
@@ -111,7 +129,7 @@ def print_terminal(report: dict) -> None:
         print(f" - {d}")
 
 
-def write_html(report: dict, out_path: Path) -> None:
+def write_html(report: dict, project: dict, out_path: Path) -> None:
     e = html.escape
     rows = ""
     for r in report["workstreams"]:
@@ -123,7 +141,7 @@ def write_html(report: dict, out_path: Path) -> None:
         )
     decisions = "".join(f"<li>{e(d)}</li>" for d in report.get("decisions_needed", []))
     page = f"""<!doctype html><html><head><meta charset="utf-8">
-<title>EVA v2 Status - {date.today().isoformat()}</title>
+<title>{e(project['project'])} Status - {date.today().isoformat()}</title>
 <style>
  body {{ font-family: Segoe UI, Arial, sans-serif; margin: 32px; color: #222; max-width: 1200px; }}
  h1 {{ font-size: 22px; margin-bottom: 4px; }} .sub {{ color: #666; margin-top: 0; }}
@@ -134,8 +152,8 @@ def write_html(report: dict, out_path: Path) -> None:
  .legend span {{ display: inline-block; padding: 2px 8px; margin-right: 8px; border-radius: 4px; font-size: 13px; }}
  .draft {{ color: #a00; font-size: 13px; margin-top: 24px; }}
 </style></head><body>
-<h1>Edge Video Analytics v2 - Status Report</h1>
-<p class="sub">GA target Nov 20, 2026 &middot; generated {date.today().isoformat()}</p>
+<h1>{e(project['project'])} - Status Report</h1>
+<p class="sub">GA target {e(project['ga_target'])} &middot; generated {date.today().isoformat()}</p>
 <h2>Executive summary</h2>
 <div class="summary">{e(report['executive_summary'])}</div>
 <h2>Workstream status</h2>
@@ -155,20 +173,22 @@ def write_html(report: dict, out_path: Path) -> None:
 
 
 def main() -> None:
-    if len(sys.argv) != 3:
-        print("Usage: python status_report.py <jira_export.csv> <meeting_notes.txt>")
+    if len(sys.argv) not in (3, 4):
+        print("Usage: python status_report.py <jira_export.csv> <meeting_notes.txt> [project.json]")
         sys.exit(1)
 
     jira = Path(sys.argv[1]).read_text(encoding="utf-8")
     notes = Path(sys.argv[2]).read_text(encoding="utf-8")
+    project = load_project(Path(sys.argv[3] if len(sys.argv) == 4 else "project.json"))
 
     print("Asking Claude for the status report...")
-    report = ask_claude(jira, notes)
+    report = ask_claude(jira, notes, project)
 
     print_terminal(report)
 
-    out_path = Path(f"EVA_v2_status_{date.today().isoformat()}.html").resolve()
-    write_html(report, out_path)
+    slug = "".join(c if c.isalnum() else "_" for c in project["project"]).strip("_")
+    out_path = Path(f"{slug}_status_{date.today().isoformat()}.html").resolve()
+    write_html(report, project, out_path)
     print(f"\nDraft saved to {out_path} - review owners and dates before sending.")
     webbrowser.open(out_path.as_uri())
 

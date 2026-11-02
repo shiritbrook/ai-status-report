@@ -1,0 +1,13 @@
+{
+  "project": "Edge Video Analytics v2",
+  "ga_target": "Nov 20, 2026",
+  "workstreams": [
+    "AI Models",
+    "MLOps",
+    "Edge Platform",
+    "Cloud Video Platform",
+    "Security",
+    "QA",
+    "Program/Pilot"
+  ]
+}
